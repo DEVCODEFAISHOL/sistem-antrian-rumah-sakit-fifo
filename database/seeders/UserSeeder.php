@@ -18,7 +18,7 @@ class UserSeeder extends Seeder
         $admin = User::create([
             'name' => 'Admin',
             'email' => 'admin@example.com',
-            'password' => bcrypt('password'), // Ganti dengan password yang diinginkan
+            'password' => bcrypt('password'), // Ganti dengan password yang diinginkannpm run dev
         ]);
         $adminRole = Role::findByName('admin');
         $admin->assignRole($adminRole);

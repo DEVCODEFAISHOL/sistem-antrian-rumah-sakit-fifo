@@ -3,38 +3,32 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
 class PatientSeeder extends Seeder
 {
-    private $provinces = [];
-    private $regencies = [];
-    private $districts = [];
-    private $villages = [];
-
-    private function fetchData()
-    {
-        // Fetch provinces
-        $response = Http::get('https://emsifa.github.io/api-wilayah-indonesia/api/provinces.json');
-        $this->provinces = $response->json();
-
-        // Fetch regencies for a random province
-        $randomProvince = $this->provinces[array_rand($this->provinces)];
-        $response = Http::get("https://emsifa.github.io/api-wilayah-indonesia/api/regencies/{$randomProvince['id']}.json");
-        $this->regencies = $response->json();
-
-        // Fetch districts for a random regency
-        $randomRegency = $this->regencies[array_rand($this->regencies)];
-        $response = Http::get("https://emsifa.github.io/api-wilayah-indonesia/api/districts/{$randomRegency['id']}.json");
-        $this->districts = $response->json();
-
-        // Fetch villages for a random district
-        $randomDistrict = $this->districts[array_rand($this->districts)];
-        $response = Http::get("https://emsifa.github.io/api-wilayah-indonesia/api/villages/{$randomDistrict['id']}.json");
-        $this->villages = $response->json();
-    }
+    // Data wilayah statis (contoh)
+    private $provinces = [
+        ['id' => '32', 'name' => 'Jawa Barat'],
+        ['id' => '33', 'name' => 'Jawa Tengah'],
+        ['id' => '35', 'name' => 'Jawa Timur'],
+    ];
+    private $regencies = [
+        ['id' => '3201', 'province_id' => '32', 'name' => 'Kabupaten Bogor'],
+        ['id' => '3202', 'province_id' => '32', 'name' => 'Kabupaten Sukabumi'],
+        ['id' => '3301', 'province_id' => '33', 'name' => 'Kabupaten Cilacap'],
+    ];
+    private $districts = [
+        ['id' => '3201010', 'regency_id' => '3201', 'name' => 'Cibinong'],
+        ['id' => '3201020', 'regency_id' => '3201', 'name' => 'Citeureup'],
+        ['id' => '3301010', 'regency_id' => '3301', 'name' => 'Cilacap Selatan'],
+    ];
+    private $villages = [
+        ['id' => '3201010001', 'district_id' => '3201010', 'name' => 'Pondok Rajeg'],
+        ['id' => '3201010002', 'district_id' => '3201010', 'name' => 'Nanggewer'],
+        ['id' => '3301010001', 'district_id' => '3301010', 'name' => 'Sidakaya'],
+    ];
 
     private function generateValidNIK($birthDate, $gender)
     {
@@ -78,8 +72,6 @@ class PatientSeeder extends Seeder
 
     public function run()
     {
-        $this->fetchData();
-
         // Array nama Indonesia
         $firstNames = [
             'Adi', 'Budi', 'Citra', 'Dewi', 'Eko', 'Fitri', 'Gunawan', 'Hadi', 'Indah', 'Joko',
@@ -131,7 +123,7 @@ class PatientSeeder extends Seeder
                 'jenis_kelamin' => $gender,
                 'alamat' => $address,
                 'no_telepon' => $phone,
-                'medical_history' => $medicalHistory, // Ganti riwayat_penyakit dengan medical_history
+                'medical_history' => $medicalHistory,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
