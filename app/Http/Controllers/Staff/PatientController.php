@@ -103,13 +103,13 @@ class PatientController extends Controller
         return view('staff.patients.index', compact('patients'));
     }
 
-    public function history(Patient $patient)
+    public function history(Patient $patient) // Requires a Patient object
     {
-         $queues = Queue::with(['patient', 'poli','dokter'])
-             ->where('patient_id', $patient->id)
+        $queues = Queue::with(['patient', 'poli', 'dokter'])
+            ->where('patient_id', $patient->id) // Filter by patient ID
             ->orderBy('created_at', 'desc')
-           ->get();
+            ->get();
 
-        return view('staff.patients.history', compact('queues'));
+        return view('staff.patients.history', compact('queues', 'patient')); // Pass both queues and patient
     }
 }

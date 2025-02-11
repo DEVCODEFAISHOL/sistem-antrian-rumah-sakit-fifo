@@ -93,8 +93,7 @@ Route::middleware('auth')->group(function () {
 
         // Kelola pasien
         Route::resource('patients', StaffPatientController::class);
-         Route::get('/patients/search', [StaffPatientController::class, 'search'])->name('patients.search');
-        Route::get('/patients/history', [StaffPatientController::class, 'history'])->name('patients.history');
+       Route::get('/patients/history', [StaffPatientController::class, 'history'])->name('patients.history');
     });
 });
 

@@ -28,7 +28,7 @@
                         </div>
                         <div class="mb-4">
                             <label for="tanggal_lahir" class="block text-gray-700 text-sm font-bold mb-2">Tanggal Lahir</label>
-                            <input type="date" name="tanggal_lahir" id="tanggal_lahir" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" value="{{ old('tanggal_lahir', $patient->tanggal_lahir->format('Y-m-d')) }}" required>
+                            <input type="date" name="tanggal_lahir" id="tanggal_lahir" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" value="{{ old('tanggal_lahir', \Carbon\Carbon::parse($patient->tanggal_lahir)->format('Y-m-d')) }}" required>
                            @error('tanggal_lahir')
                                <p class="text-red-500 text-xs italic">{{ $message }}</p>
                            @enderror

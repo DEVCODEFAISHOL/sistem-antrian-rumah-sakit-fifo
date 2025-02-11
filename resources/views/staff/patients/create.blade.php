@@ -9,7 +9,7 @@
         <div class="max-w-3xl mx-auto sm:px-6 lg:px-8">
             <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                 <div class="p-6 bg-white border-b border-gray-200">
-                    <form action="{{ route('staff.pasien.store') }}" method="POST">
+                    <form action="{{ route('staff.patients.store') }}" method="POST">
                         @csrf
                          <div class="mb-4">
                             <label for="nama" class="block text-gray-700 text-sm font-bold mb-2">Nama Pasien</label>
@@ -67,7 +67,7 @@
                             <button type="submit" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
                                 Simpan
                             </button>
-                              <a href="{{ route('staff.pasien.index') }}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                            <a href="{{ route('staff.patients.index') }}"class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
                                 Batal
                             </a>
                        </div>

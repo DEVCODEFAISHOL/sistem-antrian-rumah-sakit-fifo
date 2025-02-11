@@ -14,11 +14,7 @@
                             class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
                             Tambah Antrian
                         </a>
-                        <a href="{{ route('staff.queues.history') }}"
-                            class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded ml-2">
-                            Riwayat Antrian
-                        </a>
-                    </div>
+                        </div>
                     @if (session('success'))
                         <div class="bg-green-200 text-green-800 border border-green-400 px-4 py-3 rounded relative"
                             role="alert">

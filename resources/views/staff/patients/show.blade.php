@@ -19,7 +19,7 @@
                      </div>
                    <div class="mb-4">
                         <strong class="block text-gray-700 text-sm font-bold mb-2">Tanggal Lahir:</strong>
-                         <p>{{ $patient->tanggal_lahir->format('d-m-Y') }}</p>
+                         <p>  {{ \Carbon\Carbon::parse($patient->tanggal_lahir)->format('d-m-Y') }}</p>
                     </div>
                     <div class="mb-4">
                        <strong class="block text-gray-700 text-sm font-bold mb-2">Jenis Kelamin:</strong>

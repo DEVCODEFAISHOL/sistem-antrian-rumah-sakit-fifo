@@ -24,13 +24,13 @@
                             <thead class="bg-gray-50">
                                 <tr>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No.</th>
-                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Pasien</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nama Pasien</th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No. Antrian</th>
-                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Poli</th>
-                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dokter</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Poli</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dokter</th>
                                     <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Waktu Pesan</th>
                                      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Waktu Panggil</th>
-                                   <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                                 </tr>
                             </thead>
                            <tbody class="bg-white divide-y divide-gray-200">
@@ -40,27 +40,27 @@
                                         <td class="px-6 py-4 whitespace-nowrap">{{ $queue->patient->nama }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap">{{ $queue->queue_number }}</td>
                                         <td class="px-6 py-4 whitespace-nowrap">{{ $queue->poli->nama ?? '-' }}</td>
-                                         <td class="px-6 py-4 whitespace-nowrap">{{ $queue->dokter ? $queue->dokter->nama : 'Tidak ada' }}</td>
-                                        <td class="px-6 py-4 whitespace-nowrap">{{ $queue->created_at }}</td>
-                                       <td class="px-6 py-4 whitespace-nowrap">{{ $queue->called_time }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">{{ $queue->dokter ? $queue->dokter->nama : 'Tidak ada' }}</td>
+                                         <td class="px-6 py-4 whitespace-nowrap">{{ $queue->created_at }}</td>
+                                         <td class="px-6 py-4 whitespace-nowrap">{{ $queue->called_time }}</td>
                                            <td class="px-6 py-4 whitespace-nowrap">
-                                               <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                                                @if($queue->status == 'waiting') bg-yellow-100 text-yellow-800
-                                                 @elseif($queue->status == 'called') bg-blue-100 text-blue-800
-                                                @elseif($queue->status == 'skipped') bg-gray-100 text-gray-800
-                                                @elseif($queue->status == 'completed') bg-green-100 text-green-800
-                                               @endif">
+                                                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                                 @if($queue->status == 'waiting') bg-yellow-100 text-yellow-800
+                                                @elseif($queue->status == 'called') bg-blue-100 text-blue-800
+                                                 @elseif($queue->status == 'skipped') bg-gray-100 text-gray-800
+                                                  @elseif($queue->status == 'completed') bg-green-100 text-green-800
+                                                 @endif">
                                                     {{ $queue->status }}
                                                 </span>
                                         </td>
-                                   </tr>
+                                    </tr>
                                 @empty
                                     <tr>
-                                      <td class="px-6 py-4 whitespace-nowrap" colspan="8">Tidak ada riwayat antrian pasien.</td>
+                                        <td class="px-6 py-4 whitespace-nowrap" colspan="8">Tidak ada riwayat antrian pasien.</td>
                                     </tr>
                                 @endforelse
                             </tbody>
-                         </table>
+                        </table>
                     </div>
                 </div>
             </div>
