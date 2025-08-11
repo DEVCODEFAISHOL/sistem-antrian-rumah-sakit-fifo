@@ -25,7 +25,7 @@ use App\Http\Controllers\Staff\DashboardController as StaffDashboardController;
 
 // Route untuk halaman welcome (tidak memerlukan login)
 Route::get('/', function () {
-    return view('welcome');
+    return view('auth/login');
 });
 
 // Route untuk pasien (tanpa login)
