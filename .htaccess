@@ -1,7 +1,7 @@
 <IfModule mod_rewrite.c>
 RewriteEngine On
 RewriteBase /
-#Loading PHP as if is public/ from /
+#Loading P  P as if is public/ from /
 RewriteRule ^$ public/index.php [L]
 #Loading page as if is public/ from /
 RewriteRule ^((?!public/).*)$ public/$1 [L,NC]
