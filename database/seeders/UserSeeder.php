@@ -31,7 +31,7 @@ class UserSeeder extends Seeder
         ]);
         $staffRole = Role::findByName('staff');
         $staff->assignRole($staffRole);
-
+        
 
     }
 }
