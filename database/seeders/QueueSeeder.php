@@ -66,3 +66,4 @@ class QueueSeeder extends Seeder
         }
     }
 }
+

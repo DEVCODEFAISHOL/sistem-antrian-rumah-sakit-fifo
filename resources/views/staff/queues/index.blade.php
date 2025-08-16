@@ -2,555 +2,621 @@
     <x-slot name="header">
         <div class="flex justify-between items-center">
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                {{ __('Daftar Antrian Hari Ini') }}
+                {{ __('Manajemen Antrian') }}
             </h2>
-            <div class="text-sm text-gray-600">
-                {{ now()->format('d F Y') }}
+            <div class="flex space-x-2">
+                <a href="{{ route('staff.queues.create') }}" class="bg-sky-500 hover:bg-sky-600 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                    </svg>
+                    Tambah Antrian
+                </a>
+                <a href="{{ route('staff.queues.history') }}" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-4 rounded-lg transition-colors duration-200 flex items-center">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Riwayat
+                </a>
             </div>
         </div>
     </x-slot>
 
-    <div class="py-12">
+    <div class="py-12 bg-gradient-to-br from-sky-50 to-blue-100 min-h-screen">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
+            <!-- Alert Messages -->
+            @if(session('success'))
+                <div class="mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg relative" role="alert">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span>{{ session('success') }}</span>
+                    </div>
+                </div>
+            @endif
+
+            @if(session('error'))
+                <div class="mb-6 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative" role="alert">
+                    <div class="flex items-center">
+                        <svg class="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                        </svg>
+                        <span>{{ session('error') }}</span>
+                    </div>
+                </div>
+            @endif
+
             <!-- Statistics Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
-                <div class="bg-blue-500 text-white p-4 rounded-lg shadow">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-8">
+                <!-- Total Antrian -->
+                <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 border-l-4 border-sky-500">
                     <div class="flex items-center">
-                        <div class="flex-1">
-                            <h3 class="text-sm font-medium">Total Antrian</h3>
-                            <p class="text-2xl font-bold">{{ $stats['total'] }}</p>
+                        <div class="flex-shrink-0">
+                            <div class="bg-sky-100 rounded-lg p-3">
+                                <svg class="w-8 h-8 text-sky-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                                </svg>
+                            </div>
                         </div>
-                        <div class="text-blue-200">
-                            <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                            </svg>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-500 uppercase">Total</p>
+                            <p class="text-2xl font-bold text-gray-900">{{ $stats['total'] }}</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-yellow-500 text-white p-4 rounded-lg shadow">
+                <!-- Menunggu -->
+                <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 border-l-4 border-blue-500">
                     <div class="flex items-center">
-                        <div class="flex-1">
-                            <h3 class="text-sm font-medium">Menunggu</h3>
-                            <p class="text-2xl font-bold">{{ $stats['waiting'] }}</p>
+                        <div class="flex-shrink-0">
+                            <div class="bg-blue-100 rounded-lg p-3">
+                                <svg class="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
                         </div>
-                        <div class="text-yellow-200">
-                            <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/>
-                            </svg>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-500 uppercase">Menunggu</p>
+                            <p class="text-2xl font-bold text-gray-900">{{ $stats['waiting'] }}</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-indigo-500 text-white p-4 rounded-lg shadow">
+                <!-- Dipanggil -->
+                <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 border-l-4 border-yellow-500">
                     <div class="flex items-center">
-                        <div class="flex-1">
-                            <h3 class="text-sm font-medium">Dipanggil</h3>
-                            <p class="text-2xl font-bold">{{ $stats['called'] }}</p>
+                        <div class="flex-shrink-0">
+                            <div class="bg-yellow-100 rounded-lg p-3">
+                                <svg class="w-8 h-8 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+                                </svg>
+                            </div>
                         </div>
-                        <div class="text-indigo-200">
-                            <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-                                <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.774-1.548a1 1 0 011.059-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z"/>
-                            </svg>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-500 uppercase">Dipanggil</p>
+                            <p class="text-2xl font-bold text-gray-900">{{ $stats['called'] }}</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-green-500 text-white p-4 rounded-lg shadow">
+                <!-- Selesai -->
+                <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 border-l-4 border-green-500">
                     <div class="flex items-center">
-                        <div class="flex-1">
-                            <h3 class="text-sm font-medium">Selesai</h3>
-                            <p class="text-2xl font-bold">{{ $stats['completed'] }}</p>
+                        <div class="flex-shrink-0">
+                            <div class="bg-green-100 rounded-lg p-3">
+                                <svg class="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
                         </div>
-                        <div class="text-green-200">
-                            <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                            </svg>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-500 uppercase">Selesai</p>
+                            <p class="text-2xl font-bold text-gray-900">{{ $stats['completed'] }}</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="bg-gray-500 text-white p-4 rounded-lg shadow">
+                <!-- Dilewati -->
+                <div class="bg-white rounded-xl shadow-lg hover:shadow-xl transition-shadow duration-300 p-6 border-l-4 border-red-500">
                     <div class="flex items-center">
-                        <div class="flex-1">
-                            <h3 class="text-sm font-medium">Dilewati</h3>
-                            <p class="text-2xl font-bold">{{ $stats['skipped'] }}</p>
+                        <div class="flex-shrink-0">
+                            <div class="bg-red-100 rounded-lg p-3">
+                                <svg class="w-8 h-8 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
                         </div>
-                        <div class="text-gray-200">
-                            <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                            </svg>
+                        <div class="ml-4">
+                            <p class="text-sm font-medium text-gray-500 uppercase">Dilewati</p>
+                            <p class="text-2xl font-bold text-gray-900">{{ $stats['skipped'] }}</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Kuota Poli Cards -->
+            <!-- Kuota Poli Hari Ini -->
             @if($poliQuotas->count() > 0)
-            <div class="mb-6">
-                <h3 class="text-lg font-medium text-gray-900 mb-4">Status Kuota Poli Hari Ini</h3>
-                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    @foreach($poliQuotas as $quota)
-                    <div class="bg-white rounded-lg shadow p-4 border-l-4
-                        {{ $quota->current_count >= $quota->max_quota ? 'border-red-500' : ($quota->current_count >= $quota->max_quota * 0.8 ? 'border-yellow-500' : 'border-green-500') }}">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h4 class="font-medium text-gray-900">{{ $quota->poli->nama }}</h4>
-                                <p class="text-sm text-gray-600">{{ $quota->poli->kode_poli }}</p>
+            <div class="bg-white rounded-xl shadow-lg mb-8 overflow-hidden">
+                <div class="bg-gradient-to-r from-sky-500 to-blue-600 px-6 py-4">
+                    <h3 class="text-xl font-bold text-white flex items-center">
+                        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v4a2 2 0 01-2 2h-2a2 2 0 00-2-2z"></path>
+                        </svg>
+                        Kuota Poli Hari Ini ({{ now()->format('d/m/Y') }})
+                    </h3>
+                </div>
+                <div class="p-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        @foreach($poliQuotas as $quota)
+                        <div class="border rounded-lg p-4 {{ $quota->current_count >= $quota->max_quota ? 'border-red-300 bg-red-50' : 'border-green-300 bg-green-50' }}">
+                            <div class="flex justify-between items-center mb-2">
+                                <h4 class="font-semibold text-gray-800">{{ $quota->poli->nama }}</h4>
+                                <span class="text-xs {{ $quota->current_count >= $quota->max_quota ? 'text-red-600 bg-red-100' : 'text-green-600 bg-green-100' }} px-2 py-1 rounded-full">
+                                    {{ $quota->current_count }}/{{ $quota->max_quota }}
+                                </span>
                             </div>
-                            <span class="text-xs px-2 py-1 rounded-full
-                                {{ $quota->current_count >= $quota->max_quota ? 'bg-red-100 text-red-800' : ($quota->current_count >= $quota->max_quota * 0.8 ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-800') }}">
-                                {{ $quota->current_count }}/{{ $quota->max_quota }}
-                            </span>
-                        </div>
-                        <div class="mt-2">
                             <div class="w-full bg-gray-200 rounded-full h-2">
-                                <div class="h-2 rounded-full {{ $quota->current_count >= $quota->max_quota ? 'bg-red-500' : ($quota->current_count >= $quota->max_quota * 0.8 ? 'bg-yellow-500' : 'bg-green-500') }}"
+                                <div class="h-2 rounded-full {{ $quota->current_count >= $quota->max_quota ? 'bg-red-500' : 'bg-green-500' }}"
                                      style="width: {{ ($quota->current_count / $quota->max_quota) * 100 }}%"></div>
                             </div>
+                            <p class="text-xs text-gray-600 mt-1">
+                                Sisa: {{ $quota->max_quota - $quota->current_count }} slot
+                            </p>
                         </div>
+                        @endforeach
                     </div>
-                    @endforeach
                 </div>
             </div>
             @endif
 
-            <!-- Main Content -->
-            <div class="bg-white overflow-hidden shadow-sm sm:rounded-lg">
-                <div class="p-6 bg-white border-b border-gray-200">
+            <!-- Filter dan Search -->
+            <div class="bg-white rounded-xl shadow-lg mb-8 p-6">
+                <div class="flex flex-wrap gap-4 items-center justify-between">
+                    <div class="flex flex-wrap gap-4">
+                        <!-- Filter Status -->
+                        <select id="filterStatus" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+                            <option value="">Semua Status</option>
+                            <option value="waiting">Menunggu</option>
+                            <option value="called">Dipanggil</option>
+                            <option value="completed">Selesai</option>
+                            <option value="skipped">Dilewati</option>
+                        </select>
 
-                    <!-- Action Buttons -->
-                    <div class="mb-4 flex justify-between items-center">
-                        <div class="flex space-x-2">
-                            <a href="{{ route('staff.queues.create') }}"
-                                class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded inline-flex items-center">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                                </svg>
-                                Tambah Antrian
-                            </a>
+                        <!-- Filter Prioritas -->
+                        <select id="filterPriority" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+                            <option value="">Semua Prioritas</option>
+                            <option value="ringan">Ringan</option>
+                            <option value="sedang">Sedang</option>
+                            <option value="berat">Berat</option>
+                        </select>
 
-                            <a href="{{ route('staff.queues.history') }}"
-                                class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded inline-flex items-center">
-                                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                                Riwayat Antrian
-                            </a>
-                        </div>
-
-                        <!-- Auto Refresh Toggle -->
-                        <div class="flex items-center space-x-2">
-                            <label class="inline-flex items-center">
-                                <input type="checkbox" id="autoRefresh" class="form-checkbox h-4 w-4 text-green-600">
-                                <span class="ml-2 text-sm text-gray-700">Auto Refresh (30s)</span>
-                            </label>
-                        </div>
+                        <!-- Filter Poli -->
+                        <select id="filterPoli" class="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500">
+                            <option value="">Semua Poli</option>
+                            @foreach($queues->pluck('poli')->unique('id') as $poli)
+                            <option value="{{ $poli->id }}">{{ $poli->nama }}</option>
+                            @endforeach
+                        </select>
                     </div>
 
-                    <!-- Alert Messages -->
-                    @if (session('success'))
-                        <div class="bg-green-200 text-green-800 border border-green-400 px-4 py-3 rounded relative mb-4"
-                            role="alert">
-                            <span class="block sm:inline">{{ session('success') }}</span>
-                        </div>
-                    @endif
-                    @if (session('error'))
-                        <div class="bg-red-200 text-red-800 border border-red-400 px-4 py-3 rounded relative mb-4"
-                            role="alert">
-                            <span class="block sm:inline">{{ session('error') }}</span>
-                        </div>
-                    @endif
-
-                    <!-- Filter dan Search -->
-                    <div class="mb-4 grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div>
-                            <select id="statusFilter" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                <option value="">Semua Status</option>
-                                <option value="waiting">Menunggu</option>
-                                <option value="called">Dipanggil</option>
-                                <option value="completed">Selesai</option>
-                                <option value="skipped">Dilewati</option>
-                            </select>
-                        </div>
-                        <div>
-                            <select id="poliFilter" class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                                <option value="">Semua Poli</option>
-                                @foreach($queues->unique('poli_id') as $queue)
-                                    @if($queue->poli)
-                                        <option value="{{ $queue->poli->id }}">{{ $queue->poli->nama }}</option>
-                                    @endif
-                                @endforeach
-                            </select>
-                        </div>
-                        <div>
-                            <input type="text" id="searchPatient" placeholder="Cari nama pasien..."
-                                   class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
-                        </div>
-                        <div>
-                            <button onclick="resetFilters()" class="w-full bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded">
-                                Reset Filter
-                            </button>
-                        </div>
+                    <!-- Search -->
+                    <div class="relative">
+                        <input type="text" id="searchQueue" placeholder="Cari nomor antrian atau nama pasien..."
+                               class="border border-gray-300 rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500 w-64">
+                        <svg class="w-5 h-5 text-gray-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                        </svg>
                     </div>
+                </div>
+            </div>
 
-                    <!-- Table -->
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200" id="queueTable">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        No. Antrian
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Pasien
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Poli
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Dokter
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Prioritas
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Waktu Janji
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Status
-                                    </th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Estimasi Tunggu
-                                    </th>
-                                    <th class="relative px-6 py-3">
-                                        <span class="sr-only">Actions</span>
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                @forelse($queues as $queue)
-                                    <tr class="queue-row hover:bg-gray-50"
-                                        data-status="{{ $queue->status }}"
-                                        data-poli="{{ $queue->poli_id }}"
-                                        data-patient="{{ strtolower($queue->patient->name) }}">
+            <!-- Daftar Antrian -->
+            <div class="bg-white rounded-xl shadow-lg overflow-hidden">
+                <div class="bg-gradient-to-r from-sky-500 to-blue-600 px-6 py-4">
+                    <h3 class="text-xl font-bold text-white flex items-center">
+                        <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012-2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                        </svg>
+                        Daftar Antrian Hari Ini
+                        <span class="ml-2 bg-white/20 px-3 py-1 rounded-full text-sm">{{ $queues->count() }}</span>
+                    </h3>
+                </div>
 
-                                        <!-- Nomor Antrian -->
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="flex items-center">
-                                                <div class="text-sm font-medium text-gray-900">
-                                                    {{ $queue->queue_number }}
-                                                </div>
-                                                @if($queue->is_emergency)
-                                                    <span class="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
-                                                        DARURAT
-                                                    </span>
-                                                @endif
-                                            </div>
-                                        </td>
-
-                                        <!-- Pasien -->
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm font-medium text-gray-900">{{ $queue->patient->name }}</div>
-                                            <div class="text-sm text-gray-500">
-                                                {{ $queue->patient->nik }} | {{ $queue->jenis_kunjungan }}
-                                            </div>
-                                        </td>
-
-                                        <!-- Poli -->
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm text-gray-900">{{ $queue->poli->nama ?? '-' }}</div>
-                                            <div class="text-sm text-gray-500">{{ $queue->poli->kode_poli ?? '-' }}</div>
-                                        </td>
-
-                                        <!-- Dokter -->
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <div class="text-sm text-gray-900">
-                                                {{ $queue->dokter ? 'Dr. ' . $queue->dokter->nama : 'Tidak ada' }}
-                                            </div>
-                                            @if($queue->dokter)
-                                                <div class="text-sm text-gray-500">{{ $queue->dokter->spesialisasi }}</div>
-                                            @endif
-                                        </td>
-
-                                        <!-- Prioritas -->
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
-                                                @if($queue->priority == 'ringan') bg-green-100 text-green-800
-                                                @elseif($queue->priority == 'sedang') bg-yellow-100 text-yellow-800
-                                                @elseif($queue->priority == 'berat') bg-red-100 text-red-800
-                                                @endif">
-                                                {{ ucfirst($queue->priority) }}
-                                            </span>
-                                        </td>
-
-                                        <!-- Waktu Janji -->
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            {{ $queue->appointment_time ? $queue->appointment_time->format('H:i') : '-' }}
-                                            @if($queue->called_time)
-                                                <div class="text-xs text-blue-600">Dipanggil: {{ $queue->called_time }}</div>
-                                            @endif
-                                        </td>
-
-                                        <!-- Status -->
-                                        <td class="px-6 py-4 whitespace-nowrap">
-                                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                                                @if($queue->status == 'waiting') bg-yellow-100 text-yellow-800
-                                                @elseif($queue->status == 'called') bg-blue-100 text-blue-800
-                                                @elseif($queue->status == 'skipped') bg-gray-100 text-gray-800
-                                                @elseif($queue->status == 'completed') bg-green-100 text-green-800
-                                                @endif">
-                                                @if($queue->status == 'waiting') Menunggu
-                                                @elseif($queue->status == 'called') Dipanggil
-                                                @elseif($queue->status == 'skipped') Dilewati
-                                                @elseif($queue->status == 'completed') Selesai
-                                                @endif
-                                            </span>
-                                        </td>
-
-                                        <!-- Estimasi Tunggu -->
-                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                            @if($queue->estimated_waiting_time && in_array($queue->status, ['waiting', 'called']))
-                                                {{ $queue->estimated_waiting_time }} menit
-                                            @else
-                                                -
-                                            @endif
-                                        </td>
-
-                                        <!-- Actions -->
-                                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                            <div class="flex items-center space-x-2">
-                                                <!-- Detail -->
-                                                <a href="{{ route('staff.queues.show', $queue->id) }}"
-                                                    class="text-indigo-600 hover:text-indigo-900" title="Detail">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
-                                                    </svg>
-                                                </a>
-
-                                                <!-- Call Button -->
-                                                @if($queue->status == 'waiting')
-                                                    <form action="{{ route('staff.queues.call', $queue->id) }}" method="POST" class="inline">
-                                                        @csrf
-                                                        <button type="submit" class="text-blue-600 hover:text-blue-900" title="Panggil">
-                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
-                                                            </svg>
-                                                        </button>
-                                                    </form>
-                                                @endif
-
-                                                <!-- Complete Button -->
-                                                @if($queue->status == 'called')
-                                                    <form action="{{ route('staff.queues.complete', $queue->id) }}" method="POST" class="inline">
-                                                        @csrf
-                                                        <button type="submit" class="text-green-600 hover:text-green-900" title="Selesai">
-                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
-                                                            </svg>
-                                                        </button>
-                                                    </form>
-                                                @endif
-
-                                                <!-- Skip Button -->
-                                                @if(in_array($queue->status, ['waiting', 'called']))
-                                                    <form action="{{ route('staff.queues.skip', $queue->id) }}" method="POST" class="inline">
-                                                        @csrf
-                                                        <button type="submit" class="text-orange-600 hover:text-orange-900" title="Lewati"
-                                                                onclick="return confirm('Yakin ingin melewati antrian ini?')">
-                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-                                                            </svg>
-                                                        </button>
-                                                    </form>
-                                                @endif
-
-                                                <!-- Edit -->
-                                                @if(in_array($queue->status, ['waiting', 'called']))
-                                                    <a href="{{ route('staff.queues.edit', $queue->id) }}"
-                                                        class="text-yellow-600 hover:text-yellow-900" title="Edit">
-                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
-                                                        </svg>
-                                                    </a>
-                                                @endif
-
-                                                <!-- Print -->
-                                                <a href="{{ route('staff.queues.print', $queue->id) }}" target="_blank"
-                                                    class="text-purple-600 hover:text-purple-900" title="Print">
-                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
-                                                    </svg>
-                                                </a>
-
-                                                <!-- Delete -->
-                                                <form action="{{ route('staff.queues.destroy', $queue->id) }}" method="POST" class="inline">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="text-red-600 hover:text-red-900" title="Hapus"
-                                                            onclick="return confirm('Apakah Anda yakin ingin menghapus antrian ini?')">
-                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
-                                                        </svg>
-                                                    </button>
-                                                </form>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @empty
-                                    <tr>
-                                        <td class="px-6 py-4 whitespace-nowrap text-center text-gray-500" colspan="9">
-                                            <div class="flex flex-col items-center py-8">
-                                                <svg class="w-16 h-16 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                                </svg>
-                                                <h3 class="mt-2 text-sm font-medium text-gray-900">Tidak ada antrian</h3>
-                                                <p class="mt-1 text-sm text-gray-500">Belum ada antrian untuk hari ini.</p>
-                                                <div class="mt-6">
-                                                    <a href="{{ route('staff.queues.create') }}"
-                                                        class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
-                                                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                                                        </svg>
-                                                        Tambah Antrian
-                                                    </a>
-                                                </div>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Pagination or Additional Info -->
+                <div class="overflow-x-auto">
                     @if($queues->count() > 0)
-                        <div class="mt-4 flex justify-between items-center text-sm text-gray-600">
-                            <div>
-                                Menampilkan {{ $queues->count() }} antrian dari total {{ $stats['total'] }} antrian hari ini
-                            </div>
-                            <div>
-                                Last updated: <span id="lastUpdated">{{ now()->format('H:i:s') }}</span>
-                            </div>
+                    <table class="min-w-full divide-y divide-gray-200" id="queueTable">
+                        <thead class="bg-sky-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">No. Antrian</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pasien</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Poli</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dokter</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Prioritas</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Keluhan</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Waktu</th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            @foreach($queues as $queue)
+                            <tr class="hover:bg-gray-50 transition-colors duration-150 queue-row"
+                                data-status="{{ $queue->status }}"
+                                data-priority="{{ $queue->priority }}"
+                                data-poli="{{ $queue->poli_id }}"
+                                data-search="{{ strtolower($queue->queue_number . ' ' . $queue->patient->nama) }}">
+
+                                <!-- No. Antrian -->
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="flex items-center">
+                                        <span class="text-lg font-bold text-sky-600">{{ $queue->queue_number }}</span>
+                                        @if($queue->is_emergency)
+                                            <span class="ml-2 bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">Darurat</span>
+                                        @endif
+                                    </div>
+                                </td>
+
+                                <!-- Pasien -->
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900">{{ $queue->patient->nama }}</div>
+                                    <div class="text-sm text-gray-500">{{ $queue->jenis_kunjungan == 'baru' ? 'Pasien Baru' : 'Pasien Lama' }}</div>
+                                </td>
+
+                                <!-- Poli -->
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">{{ $queue->poli->nama }}</div>
+                                    <div class="text-sm text-gray-500">{{ $queue->poli->kode_poli }}</div>
+                                </td>
+
+                                <!-- Dokter -->
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm text-gray-900">
+                                        {{ $queue->dokter->nama ?? 'Belum ditentukan' }}
+                                    </div>
+                                </td>
+
+                                <!-- Prioritas -->
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    @php
+                                        $priorityColors = [
+                                            'ringan' => 'bg-green-100 text-green-800',
+                                            'sedang' => 'bg-yellow-100 text-yellow-800',
+                                            'berat' => 'bg-red-100 text-red-800'
+                                        ];
+                                    @endphp
+                                    <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {{ $priorityColors[$queue->priority] ?? 'bg-gray-100 text-gray-800' }}">
+                                        {{ ucfirst($queue->priority) }}
+                                    </span>
+                                </td>
+
+                                <!-- Status -->
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    @php
+                                        $statusColors = [
+                                            'waiting' => 'bg-blue-100 text-blue-800',
+                                            'called' => 'bg-yellow-100 text-yellow-800',
+                                            'completed' => 'bg-green-100 text-green-800',
+                                            'skipped' => 'bg-red-100 text-red-800'
+                                        ];
+                                        $statusLabels = [
+                                            'waiting' => 'Menunggu',
+                                            'called' => 'Dipanggil',
+                                            'completed' => 'Selesai',
+                                            'skipped' => 'Dilewati'
+                                        ];
+                                    @endphp
+                                    <span class="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full {{ $statusColors[$queue->status] ?? 'bg-gray-100 text-gray-800' }}">
+                                        {{ $statusLabels[$queue->status] ?? ucfirst($queue->status) }}
+                                    </span>
+                                </td>
+
+                                <!-- Keluhan -->
+                                <td class="px-6 py-4 max-w-xs">
+                                    <div class="text-sm text-gray-900 truncate" title="{{ $queue->complaint }}">
+                                        {{ $queue->complaint ?? 'Tidak ada keluhan' }}
+                                    </div>
+                                </td>
+
+                                <!-- Waktu -->
+                                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                    <div>Daftar: {{ $queue->created_at->format('H:i') }}</div>
+                                    @if($queue->called_time)
+                                        <div>Panggil: {{ \Carbon\Carbon::parse($queue->called_time)->format('H:i') }}</div>
+                                    @endif
+                                </td>
+
+                                <!-- Aksi -->
+                                <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                    <div class="flex items-center space-x-2">
+
+                                        @if($queue->status == 'waiting')
+                                            <!-- Panggil -->
+                                            <form action="{{ route('staff.queues.call', $queue) }}" method="POST" class="inline">
+                                                @csrf
+                                                @method('PATCH')
+                                                <button type="submit"
+                                                        onclick="return confirm('Panggil antrian {{ $queue->queue_number }}?')"
+                                                        class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs transition-colors duration-200 flex items-center">
+                                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"></path>
+                                                    </svg>
+                                                    Panggil
+                                                </button>
+                                            </form>
+
+                                            <!-- Lewati -->
+                                            <form action="{{ route('staff.queues.skip', $queue) }}" method="POST" class="inline">
+                                                @csrf
+                                                @method('PATCH')
+                                                <button type="submit"
+                                                        onclick="return confirm('Lewati antrian {{ $queue->queue_number }}?')"
+                                                        class="bg-orange-500 hover:bg-orange-600 text-white px-3 py-1 rounded text-xs transition-colors duration-200 flex items-center">
+                                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 9l3 3m0 0l-3 3m3-3H8m13 0a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                    </svg>
+                                                    Lewati
+                                                </button>
+                                            </form>
+                                        @endif
+
+                                        @if($queue->status == 'called')
+                                            <!-- Selesai -->
+                                            <form action="{{ route('staff.queues.complete', $queue) }}" method="POST" class="inline">
+                                                @csrf
+                                                @method('PATCH')
+                                                <button type="submit"
+                                                        onclick="return confirm('Tandai antrian {{ $queue->queue_number }} selesai?')"
+                                                        class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-xs transition-colors duration-200 flex items-center">
+                                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                                    </svg>
+                                                    Selesai
+                                                </button>
+                                            </form>
+
+                                            <!-- Panggil Ulang -->
+                                            <form action="{{ route('staff.queues.call', $queue) }}" method="POST" class="inline">
+                                                @csrf
+                                                @method('PATCH')
+                                                <button type="submit"
+                                                        class="bg-yellow-500 hover:bg-yellow-600 text-white px-3 py-1 rounded text-xs transition-colors duration-200 flex items-center">
+                                                    <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                                                    </svg>
+                                                    Ulang
+                                                </button>
+                                            </form>
+                                        @endif
+
+                                        <!-- Detail -->
+                                        <a href="{{ route('staff.queues.show', $queue) }}"
+                                           class="bg-sky-500 hover:bg-sky-600 text-white px-3 py-1 rounded text-xs transition-colors duration-200 flex items-center">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                                            </svg>
+                                            Detail
+                                        </a>
+
+                                        <!-- Edit -->
+                                        <a href="{{ route('staff.queues.edit', $queue) }}"
+                                           class="bg-purple-500 hover:bg-purple-600 text-white px-3 py-1 rounded text-xs transition-colors duration-200 flex items-center">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path>
+                                            </svg>
+                                            Edit
+                                        </a>
+
+                                        <!-- Print -->
+                                        <a href="{{ route('staff.queues.print', $queue) }}"
+                                           target="_blank"
+                                           class="bg-gray-500 hover:bg-gray-600 text-white px-3 py-1 rounded text-xs transition-colors duration-200 flex items-center">
+                                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"></path>
+                                            </svg>
+                                            Print
+                                        </a>
+
+                                        <!-- Delete (hanya untuk status completed atau skipped) -->
+                                        @if(in_array($queue->status, ['completed', 'skipped']))
+                                        <form action="{{ route('staff.queues.destroy', $queue) }}" method="POST" class="inline">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit"
+                                                    onclick="return confirm('Hapus antrian {{ $queue->queue_number }}? Tindakan ini tidak dapat dibatalkan!')"
+                                                    class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-xs transition-colors duration-200 flex items-center">
+                                                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path>
+                                                </svg>
+                                                Hapus
+                                            </button>
+                                        </form>
+                                        @endif
+
+                                    </div>
+                                </td>
+                            </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                    @else
+                    <div class="text-center py-12">
+                        <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012-2m-6 9l2 2 4-4"></path>
+                        </svg>
+                        <h3 class="mt-2 text-sm font-medium text-gray-900">Belum ada antrian</h3>
+                        <p class="mt-1 text-sm text-gray-500">Belum ada pasien yang mendaftar antrian hari ini.</p>
+                        <div class="mt-6">
+                            <a href="{{ route('staff.queues.create') }}"
+                               class="inline-flex items-center px-4 py-2 bg-sky-500 hover:bg-sky-600 text-white font-bold rounded-lg transition-colors duration-200">
+                                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                </svg>
+                                Tambah Antrian Pertama
+                            </a>
                         </div>
+                    </div>
                     @endif
                 </div>
             </div>
+
         </div>
     </div>
 
-    @push('scripts')
+    <!-- JavaScript for filtering and searching -->
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Auto refresh functionality
-            let autoRefreshInterval;
-            const autoRefreshCheckbox = document.getElementById('autoRefresh');
-            const lastUpdatedSpan = document.getElementById('lastUpdated');
+            const filterStatus = document.getElementById('filterStatus');
+            const filterPriority = document.getElementById('filterPriority');
+            const filterPoli = document.getElementById('filterPoli');
+            const searchQueue = document.getElementById('searchQueue');
+            const queueRows = document.querySelectorAll('.queue-row');
 
-            autoRefreshCheckbox.addEventListener('change', function() {
-                if (this.checked) {
-                    autoRefreshInterval = setInterval(function() {
-                        window.location.reload();
-                    }, 30000); // 30 seconds
-                } else {
-                    clearInterval(autoRefreshInterval);
-                }
-            });
+            function filterTable() {
+                const statusFilter = filterStatus.value.toLowerCase();
+                const priorityFilter = filterPriority.value.toLowerCase();
+                const poliFilter = filterPoli.value;
+                const searchText = searchQueue.value.toLowerCase();
 
-            // Filter functionality
-            const statusFilter = document.getElementById('statusFilter');
-            const poliFilter = document.getElementById('poliFilter');
-            const searchPatient = document.getElementById('searchPatient');
+                queueRows.forEach(row => {
+                    const status = row.dataset.status.toLowerCase();
+                    const priority = row.dataset.priority.toLowerCase();
+                    const poli = row.dataset.poli;
+                    const searchData = row.dataset.search;
 
-            function applyFilters() {
-                const statusValue = statusFilter.value.toLowerCase();
-                const poliValue = poliFilter.value;
-                const searchValue = searchPatient.value.toLowerCase();
-                const rows = document.querySelectorAll('.queue-row');
+                    const statusMatch = !statusFilter || status === statusFilter;
+                    const priorityMatch = !priorityFilter || priority === priorityFilter;
+                    const poliMatch = !poliFilter || poli === poliFilter;
+                    const searchMatch = !searchText || searchData.includes(searchText);
 
-                rows.forEach(row => {
-                    const status = row.getAttribute('data-status');
-                    const poli = row.getAttribute('data-poli');
-                    const patient = row.getAttribute('data-patient');
-
-                    let showRow = true;
-
-                    // Filter by status
-                    if (statusValue && status !== statusValue) {
-                        showRow = false;
+                    if (statusMatch && priorityMatch && poliMatch && searchMatch) {
+                        row.style.display = '';
+                    } else {
+                        row.style.display = 'none';
                     }
-
-                    // Filter by poli
-                    if (poliValue && poli !== poliValue) {
-                        showRow = false;
-                    }
-
-                    // Filter by patient name
-                    if (searchValue && !patient.includes(searchValue)) {
-                        showRow = false;
-                    }
-
-                    row.style.display = showRow ? '' : 'none';
                 });
+
+                updateEmptyState();
             }
 
-            statusFilter.addEventListener('change', applyFilters);
-            poliFilter.addEventListener('change', applyFilters);
-            searchPatient.addEventListener('input', applyFilters);
+            function updateEmptyState() {
+                const visibleRows = document.querySelectorAll('.queue-row:not([style*="display: none"])').length;
+                const tableContainer = document.querySelector('#queueTable').closest('.overflow-x-auto');
+                const emptyState = document.querySelector('.text-center.py-12');
 
-            // Reset filters function
-            window.resetFilters = function() {
-                statusFilter.value = '';
-                poliFilter.value = '';
-                searchPatient.value = '';
-                applyFilters();
+                if (visibleRows === 0 && queueRows.length > 0) {
+                    // Hide table, show "no results" message
+                    tableContainer.innerHTML = `
+                        <div class="text-center py-12">
+                            <svg class="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                            </svg>
+                            <h3 class="mt-2 text-sm font-medium text-gray-900">Tidak ada hasil</h3>
+                            <p class="mt-1 text-sm text-gray-500">Tidak ada antrian yang sesuai dengan filter yang dipilih.</p>
+                        </div>
+                    `;
+                } else if (visibleRows > 0) {
+                    // Restore table if it was hidden
+                    if (!tableContainer.querySelector('table')) {
+                        location.reload(); // Simple solution: reload page to restore table
+                    }
+                }
+            }
+
+            // Event listeners
+            filterStatus.addEventListener('change', filterTable);
+            filterPriority.addEventListener('change', filterTable);
+            filterPoli.addEventListener('change', filterTable);
+            searchQueue.addEventListener('input', filterTable);
+
+            // Auto refresh every 30 seconds
+            setTimeout(function() {
+                location.reload();
+            }, 30000);
+
+            // Sound notification for new calls (optional)
+            const playCallSound = () => {
+                // You can add audio notification here
+                console.log('New queue called');
             };
 
-            // Update last updated time
-            function updateLastUpdatedTime() {
-                const now = new Date();
-                lastUpdatedSpan.textContent = now.toLocaleTimeString('id-ID', {
-                    hour12: false,
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    second: '2-digit'
-                });
-            }
-
-            // Update time every second
-            setInterval(updateLastUpdatedTime, 1000);
-
-            // Sound notification for new queue (optional)
-            // You can implement WebSocket or polling for real-time updates
-
-            // Keyboard shortcuts
-            document.addEventListener('keydown', function(e) {
-                // Ctrl + N for new queue
-                if (e.ctrlKey && e.key === 'n') {
-                    e.preventDefault();
-                    window.location.href = "{{ route('staff.queues.create') }}";
-                }
-                // F5 for refresh
-                if (e.key === 'F5') {
-                    updateLastUpdatedTime();
+            // Add row highlight for recently called queues
+            queueRows.forEach(row => {
+                const status = row.dataset.status;
+                if (status === 'called') {
+                    row.classList.add('bg-yellow-50', 'border-l-4', 'border-yellow-400');
                 }
             });
-
-            // Tooltip initialization (if you're using a tooltip library)
-            // Initialize any tooltip library here
-
-            // Success/Error message auto-hide
-            setTimeout(function() {
-                const alerts = document.querySelectorAll('[role="alert"]');
-                alerts.forEach(alert => {
-                    alert.style.transition = 'opacity 0.5s';
-                    alert.style.opacity = '0';
-                    setTimeout(() => alert.remove(), 500);
-                });
-            }, 5000);
         });
+
+        // Helper function to confirm actions
+        function confirmAction(action, queueNumber) {
+            return confirm(`${action} antrian ${queueNumber}?`);
+        }
+
+        // Print function
+        function printQueue(queueId) {
+            const printWindow = window.open(`/staff/queues/${queueId}/print`, '_blank');
+            printWindow.onload = function() {
+                printWindow.print();
+            };
+        }
     </script>
-    @endpush
+
+    <!-- Custom CSS for better styling -->
+    <style>
+        @media (max-width: 768px) {
+            .queue-row td {
+                padding: 0.5rem;
+                font-size: 0.875rem;
+            }
+
+            .queue-row .flex {
+                flex-wrap: wrap;
+                gap: 0.25rem;
+            }
+
+            .queue-row .flex .bg-green-500,
+            .queue-row .flex .bg-orange-500,
+            .queue-row .flex .bg-blue-500,
+            .queue-row .flex .bg-yellow-500,
+            .queue-row .flex .bg-sky-500,
+            .queue-row .flex .bg-purple-500,
+            .queue-row .flex .bg-gray-500,
+            .queue-row .flex .bg-red-500 {
+                padding: 0.25rem 0.5rem;
+                font-size: 0.75rem;
+            }
+        }
+
+        /* Smooth transitions */
+        .queue-row {
+            transition: all 0.3s ease;
+        }
+
+        .queue-row:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Priority indicators */
+        .queue-row[data-priority="berat"] {
+            border-left: 3px solid #ef4444;
+        }
+
+        .queue-row[data-priority="sedang"] {
+            border-left: 3px solid #f59e0b;
+        }
+
+        .queue-row[data-priority="ringan"] {
+            border-left: 3px solid #10b981;
+        }
+
+        /* Loading state for buttons */
+        .queue-row button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+    </style>
 </x-app-layout>

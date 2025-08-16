@@ -80,6 +80,7 @@
         <div class="alert alert-info" data-title="Info" data-message="{{ session('info') }}" style="display: none;">
         </div>
     @endif
+    
 </body>
 
 </html>
