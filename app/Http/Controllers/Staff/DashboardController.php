@@ -1,9 +1,9 @@
 <?php
-
 namespace App\Http\Controllers\Staff;
 
 use App\Http\Controllers\Controller;
 use App\Models\Queue;
+use App\Models\Poli;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
@@ -11,52 +11,43 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        // Ambil tanggal hari ini
         $today = Carbon::today();
-        // Hitung total antrian hari ini
-         $totalQueuesToday = Queue::whereDate('created_at', $today)->count();
 
-        // Hitung total antrian yang sudah dipanggil hari ini
-        $totalCalledQueues = Queue::whereDate('created_at', $today)
-            ->where('status', 'called')
-            ->count();
+        // Ambil kuota dari poli (misal khusus Penyakit Dalam)
+        $poli = Poli::where('kode_poli', 'PE')->first();
+        $dailyQuota = $poli->kapasitas_harian ?? 20; // fallback 20
 
-
-        // Ambil antrian terakhir yang dipanggil hari ini
-         $lastQueue = Queue::whereDate('created_at', $today)
-            ->where('status', 'called')
-            ->orderBy('called_time', 'desc')
-            ->first();
-
-
-         // Ambil antrian selanjutnya (antrian pertama yang masih waiting) hari ini
-         $nextQueue = Queue::whereDate('created_at', $today)
-            ->where('status', 'waiting')
+        // Ambil daftar antrian hari ini (dibatasi kuota harian)
+        $queues = Queue::with('patient')
+            ->whereDate('created_at', $today)
             ->orderBy('created_at', 'asc')
+            ->limit($dailyQuota) // ⬅️ batasi sesuai kuota
+            ->get();
+
+        // Statistik
+        $totalQueuesToday = $queues->count();
+        $totalCalledQueues = $queues->where('status', 'called')->count();
+        $lastQueue = $queues->where('status', 'called')->sortByDesc('called_time')->first();
+        $nextQueue = $queues->where('status', 'waiting')->sortBy('created_at')->first();
+
+        // Antrian Saat Ini (All, Ringan-Sedang, Berat) dari queues yang dibatasi
+        $currentQueue = $queues->where('status', 'waiting')->first();
+        $currentQueueLightMedium = $queues->where('status', 'waiting')
+            ->filter(fn($q) => in_array($q->priority, ['ringan', 'sedang']))
             ->first();
-
-
-        // Antrian Saat Ini (All, Ringan-Sedang, Berat)
-        $currentQueue = Queue::where('status', 'waiting')->whereDate('created_at', today())->orderBy('created_at', 'asc')->first();
-       $currentQueueLightMedium = Queue::where('status', 'waiting')->whereIn('priority', ['ringan', 'sedang'])->whereDate('created_at', today())->orderBy('created_at', 'asc')->first();
-       $currentQueueHeavy = Queue::where('status', 'waiting')->where('priority', 'berat')->whereDate('created_at', today())->orderBy('created_at', 'asc')->first();
-
-          // Ambil daftar antrian hari ini
-         $queues = Queue::with('patient')
-           ->whereDate('created_at', today())
-           ->orderBy('created_at', 'asc')
-           ->get();
-
+        $currentQueueHeavy = $queues->where('status', 'waiting')
+            ->where('priority', 'berat')
+            ->first();
 
         return view('staff.dashboard', compact(
-           'totalQueuesToday',
-             'totalCalledQueues',
+            'totalQueuesToday',
+            'totalCalledQueues',
             'lastQueue',
-           'nextQueue',
+            'nextQueue',
             'currentQueue',
             'currentQueueLightMedium',
-           'currentQueueHeavy',
-           'queues'
+            'currentQueueHeavy',
+            'queues'
         ));
     }
 }

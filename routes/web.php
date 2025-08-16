@@ -81,6 +81,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/dashboard', [StaffDashboardController::class, 'index'])->name('dashboard');
 
         // Kelola antrian
+         // Route ini khusus untuk menangani request AJAX pengecekan kuota poli
+      Route::get('/queues/get-poli-quota', [StaffQueueController::class, 'getPoliQuota'])->name('queues.get-poli-quota');
+
         Route::resource('queues', StaffQueueController::class);
         Route::post('/queues/{queue}/call', [StaffQueueController::class, 'call'])->name('queues.call');
         Route::post('/queues/{queue}/complete', [StaffQueueController::class, 'complete'])->name('queues.complete');

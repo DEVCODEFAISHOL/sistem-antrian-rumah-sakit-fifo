@@ -8,26 +8,30 @@ use Carbon\Carbon;
 
 class PatientSeeder extends Seeder
 {
-    // Data wilayah statis (contoh)
+    // Data wilayah untuk DKI Jakarta
     private $provinces = [
-        ['id' => '32', 'name' => 'Jawa Barat'],
-        ['id' => '33', 'name' => 'Jawa Tengah'],
-        ['id' => '35', 'name' => 'Jawa Timur'],
+        ['id' => '31', 'name' => 'DKI Jakarta'],
     ];
     private $regencies = [
-        ['id' => '3201', 'province_id' => '32', 'name' => 'Kabupaten Bogor'],
-        ['id' => '3202', 'province_id' => '32', 'name' => 'Kabupaten Sukabumi'],
-        ['id' => '3301', 'province_id' => '33', 'name' => 'Kabupaten Cilacap'],
+        ['id' => '3171', 'province_id' => '31', 'name' => 'Jakarta Selatan'],
+        ['id' => '3172', 'province_id' => '31', 'name' => 'Jakarta Timur'],
+        ['id' => '3173', 'province_id' => '31', 'name' => 'Jakarta Pusat'],
+        ['id' => '3174', 'province_id' => '31', 'name' => 'Jakarta Barat'],
+        ['id' => '3175', 'province_id' => '31', 'name' => 'Jakarta Utara'],
     ];
     private $districts = [
-        ['id' => '3201010', 'regency_id' => '3201', 'name' => 'Cibinong'],
-        ['id' => '3201020', 'regency_id' => '3201', 'name' => 'Citeureup'],
-        ['id' => '3301010', 'regency_id' => '3301', 'name' => 'Cilacap Selatan'],
+        ['id' => '3171010', 'regency_id' => '3171', 'name' => 'Kebayoran Baru'],
+        ['id' => '3172010', 'regency_id' => '3172', 'name' => 'Cakung'],
+        ['id' => '3173010', 'regency_id' => '3173', 'name' => 'Menteng'],
+        ['id' => '3174010', 'regency_id' => '3174', 'name' => 'Grogol Petamburan'],
+        ['id' => '3175010', 'regency_id' => '3175', 'name' => 'Koja'],
     ];
     private $villages = [
-        ['id' => '3201010001', 'district_id' => '3201010', 'name' => 'Pondok Rajeg'],
-        ['id' => '3201010002', 'district_id' => '3201010', 'name' => 'Nanggewer'],
-        ['id' => '3301010001', 'district_id' => '3301010', 'name' => 'Sidakaya'],
+        ['id' => '3171010001', 'district_id' => '3171010', 'name' => 'Gandaria Utara'],
+        ['id' => '3172010001', 'district_id' => '3172010', 'name' => 'Penggilingan'],
+        ['id' => '3173010001', 'district_id' => '3173010', 'name' => 'Pegangsaan'],
+        ['id' => '3174010001', 'district_id' => '3174010', 'name' => 'Tomang'],
+        ['id' => '3175010001', 'district_id' => '3175010', 'name' => 'Tugu Utara'],
     ];
 
     private function generateValidNIK($birthDate, $gender)
@@ -46,7 +50,7 @@ class PatientSeeder extends Seeder
         $month = $birthDate->format('m');
         $year = substr($birthDate->format('y'), -2);
 
-        // Get region codes from IDs
+        // Get region codes
         $provinceCode = substr($province['id'], 0, 2);
         $regencyCode = substr($regency['id'], 2, 2);
         $districtCode = substr($district['id'], 4, 2);
@@ -75,8 +79,7 @@ class PatientSeeder extends Seeder
         // Array nama Indonesia
         $firstNames = [
             'Adi', 'Budi', 'Citra', 'Dewi', 'Eko', 'Fitri', 'Gunawan', 'Hadi', 'Indah', 'Joko',
-            'Kartika', 'Lestari', 'Muhammad', 'Nina', 'Oscar', 'Putri', 'Rini', 'Sari', 'Tono', 'Untung',
-            'Wahyu', 'Yanto', 'Zainal', 'Ayu', 'Bambang', 'Dian', 'Eko', 'Farida', 'Gading', 'Hendra'
+            'Kartika', 'Lestari', 'Muhammad', 'Nina', 'Oscar', 'Putri', 'Rini', 'Sari', 'Tono', 'Untung'
         ];
 
         $lastNames = [
@@ -84,13 +87,13 @@ class PatientSeeder extends Seeder
             'Santoso', 'Kusuma', 'Pratama', 'Widodo', 'Saputra', 'Suryadi', 'Hartono', 'Wibowo', 'Pranowo'
         ];
 
-        for ($i = 0; $i < 300; $i++) {
+        for ($i = 0; $i < 20; $i++) {
             $firstName = $firstNames[array_rand($firstNames)];
             $lastName = $lastNames[array_rand($lastNames)];
             $fullName = $firstName . ' ' . $lastName;
 
             $gender = rand(0, 1) ? 'Laki-laki' : 'Perempuan';
-            $birthDate = Carbon::createFromDate(rand(1950, 2005), rand(1, 12), rand(1, 28));
+            $birthDate = Carbon::createFromDate(rand(1970, 2005), rand(1, 12), rand(1, 28));
 
             $nikData = $this->generateValidNIK($birthDate, $gender);
 
@@ -99,7 +102,7 @@ class PatientSeeder extends Seeder
                     str_pad(rand(0, 9999), 4, '0', STR_PAD_LEFT);
 
             $address = sprintf(
-                'Jl. %s No. %d, Desa %s, Kec. %s, %s, %s',
+                'Jl. %s No. %d, Kel. %s, Kec. %s, %s, %s',
                 $lastNames[array_rand($lastNames)],
                 rand(1, 200),
                 $nikData['address']['village'],
@@ -108,7 +111,6 @@ class PatientSeeder extends Seeder
                 $nikData['address']['province']
             );
 
-            // Data riwayat medis
             $medicalHistory = rand(0, 1) ? 'Tidak ada' : json_encode([
                 'riwayat_penyakit' => ['Hipertensi', 'Diabetes'],
                 'alergi' => ['Penisilin', 'Kacang'],

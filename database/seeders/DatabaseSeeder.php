@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             PatientSeeder::class,
             DokterSeeder::class,
              PoliSeeder::class,
+             PoliQuotaSeeder::class,
              QueueSeeder::class,
         ]);
     }

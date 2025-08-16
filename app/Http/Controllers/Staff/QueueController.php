@@ -2,344 +2,380 @@
 
 namespace App\Http\Controllers\Staff;
 
-use App\Models\Poli;
+use App\Http\Controllers\Controller;
 use App\Models\Queue;
-use App\Models\Dokter;
 use App\Models\Patient;
+use App\Models\Poli;
+use App\Models\PoliQuota;
+use App\Models\Dokter;
 use App\Models\CallHistory;
 use Illuminate\Http\Request;
-use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log;
-use App\Http\Controllers\Controller;
-use Illuminate\Support\Facades\Session;
-use Illuminate\Support\Facades\Validator;
-use Carbon\Carbon; // Import Carbon untuk manipulasi waktu
 
 class QueueController extends Controller
 {
     public function index()
     {
-        // Ambil semua antrian hari ini dengan relasi pasien, poli, dan dokter
+        $today = Carbon::today();
+
         $queues = Queue::with(['patient', 'poli', 'dokter'])
-            ->whereDate('created_at', today())
-            ->orderBy('created_at', 'asc')
+            ->whereDate('checkup_date', $today)
+            ->orderBy('queue_number')
             ->get();
 
-        return view('staff.queues.index', compact('queues'));
+        // Statistik untuk dashboard cards
+        $stats = [
+            'total' => $queues->count(),
+            'waiting' => $queues->where('status', 'waiting')->count(),
+            'called' => $queues->where('status', 'called')->count(),
+            'completed' => $queues->where('status', 'completed')->count(),
+            'skipped' => $queues->where('status', 'skipped')->count(),
+        ];
+
+        // Data kuota per poli hari ini
+        $poliQuotas = PoliQuota::with('poli')
+            ->where('quota_date', $today)
+            ->get();
+
+        return view('staff.queues.index', compact('queues', 'stats', 'poliQuotas'));
     }
+
     public function create()
     {
-        // Ambil data pasien, poli, dan dokter untuk form tambah antrian
-        $patients = Patient::all();
-        $polis = Poli::where('status', 'aktif')->get();
-        $dokters = Dokter::all();
+        $patients = Patient::orderBy('nama')->get();
+        $polis = Poli::where('status', 'aktif')->orderBy('nama')->get();
+        $dokters = Dokter::where('status', 'aktif')->orderBy('nama')->get();
 
         return view('staff.queues.create', compact('patients', 'polis', 'dokters'));
     }
 
     public function store(Request $request)
     {
-        // Validasi input
-        $validator = Validator::make($request->all(), [
+        $request->validate([
             'patient_id' => 'required|exists:patients,id',
             'poli_id' => 'required|exists:polis,id',
             'dokter_id' => 'nullable|exists:dokters,id',
             'priority' => 'required|in:ringan,sedang,berat',
             'appointment_time' => 'nullable|date_format:H:i',
-            'keterangan' => 'nullable|string|max:255',
-            'checkup_date' => 'required|date',
+            'checkup_date' => 'required|date|after_or_equal:today',
+            'complaint' => 'nullable|string|max:1000',
+            'keterangan' => 'nullable|string|max:500',
             'jenis_kunjungan' => 'required|in:baru,lama',
-            'complaint' => 'nullable|string',
-            'is_emergency' => 'sometimes|boolean',
+            'is_emergency' => 'boolean'
         ]);
 
-        // Jika validasi gagal, kembalikan response error
-        if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
-        }
-        // Mulai transaksi database
-        DB::transaction(function () use ($request) {
-            // Generate nomor antrian
-            $queueNumber = Queue::generateQueueNumber($request->poli_id);
+        try {
+            DB::beginTransaction();
 
-            // Buat antrian baru
-            Queue::create([
+            // 1. Cek kuota poli untuk tanggal yang dipilih
+            $checkupDate = Carbon::parse($request->checkup_date);
+            $poliQuota = $this->checkAndUpdatePoliQuota($request->poli_id, $checkupDate);
+
+            if (!$poliQuota) {
+                return back()->with('error', 'Kuota untuk poli ini pada tanggal tersebut sudah penuh!');
+            }
+
+            // 2. Cek duplikasi pasien di poli yang sama pada hari yang sama
+            $existingQueue = Queue::where('patient_id', $request->patient_id)
+                ->where('poli_id', $request->poli_id)
+                ->whereDate('checkup_date', $checkupDate)
+                ->whereIn('status', ['waiting', 'called'])
+                ->first();
+
+            if ($existingQueue) {
+                return back()->with('error', 'Pasien sudah terdaftar di poli ini pada tanggal yang sama!');
+            }
+
+            // 3. Generate nomor antrian
+            $queueNumber = $this->generateQueueNumber($request->poli_id, $checkupDate);
+
+            // 4. Hitung estimasi waktu tunggu
+            $estimatedTime = $this->calculateEstimatedWaitingTime($request->poli_id, $checkupDate);
+
+            // 5. Buat antrian baru
+            $queue = Queue::create([
                 'patient_id' => $request->patient_id,
                 'poli_id' => $request->poli_id,
                 'dokter_id' => $request->dokter_id,
                 'queue_number' => $queueNumber,
                 'priority' => $request->priority,
                 'appointment_time' => $request->appointment_time,
-                'status' => 'waiting',
-                'keterangan' => $request->keterangan,
-                'checkup_date' => $request->checkup_date,
-                'jenis_kunjungan' => $request->jenis_kunjungan,
+                'checkup_date' => $checkupDate,
                 'complaint' => $request->complaint,
-                'is_emergency' => $request->is_emergency ? true : false,
+                'keterangan' => $request->keterangan,
+                'jenis_kunjungan' => $request->jenis_kunjungan,
+                'is_emergency' => $request->boolean('is_emergency'),
+                'estimated_waiting_time' => $estimatedTime,
+                'status' => 'waiting'
             ]);
-        });
 
-        return redirect()->route('staff.queues.index')
-            ->with('success', 'Antrian berhasil ditambahkan.');
+            // 6. Update current_count di poli_quotas
+            $poliQuota->increment('current_count');
+
+            DB::commit();
+
+            return redirect()->route('staff.queues.index')
+                ->with('success', "Antrian berhasil ditambahkan dengan nomor: {$queueNumber}");
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
     }
 
     public function show(Queue $queue)
     {
-        $queue->load(['patient', 'poli', 'dokter']);
+        $queue->load(['patient', 'poli', 'dokter', 'callHistories']);
+
         return view('staff.queues.show', compact('queue'));
     }
+
     public function edit(Queue $queue)
     {
-        // Ambil data pasien dan poli untuk form edit antrian
-        $patients = Patient::all();
-        $polis = Poli::where('status', 'aktif')->get();
-        $dokters = Dokter::all();
+        $patients = Patient::orderBy('nama')->get();
+        $polis = Poli::where('status', 'aktif')->orderBy('nama')->get();
+        $dokters = Dokter::where('status', 'aktif')->orderBy('nama')->get();
 
         return view('staff.queues.edit', compact('queue', 'patients', 'polis', 'dokters'));
     }
 
     public function update(Request $request, Queue $queue)
     {
-        // Validasi input
-        $validator = Validator::make($request->all(), [
+        $request->validate([
             'patient_id' => 'required|exists:patients,id',
             'poli_id' => 'required|exists:polis,id',
             'dokter_id' => 'nullable|exists:dokters,id',
             'priority' => 'required|in:ringan,sedang,berat',
             'appointment_time' => 'nullable|date_format:H:i',
-            'keterangan' => 'nullable|string|max:255',
-            'checkup_date' => 'required|date',
-            'jenis_kunjungan' => 'required|in:baru,lama',
-            'complaint' => 'nullable|string',
-            'is_emergency' => 'sometimes|boolean',
+            'complaint' => 'nullable|string|max:1000',
+            'keterangan' => 'nullable|string|max:500',
+            'status' => 'required|in:waiting,called,skipped,completed'
         ]);
 
-        if ($validator->fails()) {
-            return redirect()->back()
-                ->withErrors($validator)
-                ->withInput();
+        try {
+            DB::beginTransaction();
+
+            // Jika poli berubah, perlu update kuota
+            if ($queue->poli_id != $request->poli_id) {
+                // Kurangi kuota poli lama
+                $oldPoliQuota = PoliQuota::where('poli_id', $queue->poli_id)
+                    ->where('quota_date', $queue->checkup_date->format('Y-m-d'))
+                    ->first();
+                if ($oldPoliQuota && $oldPoliQuota->current_count > 0) {
+                    $oldPoliQuota->decrement('current_count');
+                }
+
+                // Cek kuota poli baru
+                $newPoliQuota = $this->checkAndUpdatePoliQuota($request->poli_id, $queue->checkup_date);
+                if (!$newPoliQuota) {
+                    return back()->with('error', 'Kuota untuk poli baru sudah penuh!');
+                }
+                $newPoliQuota->increment('current_count');
+            }
+
+            $queue->update($request->except(['checkup_date'])); // checkup_date tidak bisa diubah
+
+            DB::commit();
+
+            return redirect()->route('staff.queues.index')
+                ->with('success', 'Antrian berhasil diperbarui');
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
-
-        // Update data antrian
-        $queue->update([
-            'patient_id' => $request->patient_id,
-            'poli_id' => $request->poli_id,
-            'dokter_id' => $request->dokter_id,
-            'priority' => $request->priority,
-            'appointment_time' => $request->appointment_time,
-            'keterangan' => $request->keterangan,
-            'checkup_date' => $request->checkup_date,
-            'jenis_kunjungan' => $request->jenis_kunjungan,
-            'complaint' => $request->complaint,
-            'is_emergency' => $request->is_emergency ? true : false,
-        ]);
-
-        return redirect()->route('staff.queues.index')
-            ->with('success', 'Antrian berhasil diperbarui.');
     }
 
     public function destroy(Queue $queue)
     {
-        // Hapus antrian
-        $queue->delete();
-
-        return redirect()->route('staff.queues.index')
-            ->with('success', 'Antrian berhasil dihapus.');
-    }
-
-    public function today()
-    {
-        // Ambil semua antrian hari ini dengan relasi pasien dan poli
-        $queues = Queue::with(['patient', 'poli', 'dokter'])
-            ->whereDate('created_at', today())
-            ->orderBy('created_at', 'asc')
-            ->get();
-        return view('staff.queues.today', compact('queues'));
-    }
-
-    public function history()
-    {
-        // Ambil semua riwayat antrian dengan relasi pasien, poli, dan riwayat panggilan
-        $queues = Queue::with(['patient', 'poli', 'dokter', 'callHistories' => function ($query) {
-            $query->where('status', 'called')->orderBy('called_time', 'desc');
-        }])
-            ->orderBy('created_at', 'desc')
-            ->get();
-
-        return view('staff.queues.history', compact('queues'));
-    }
-    public function review(Queue $queue)
-    {
-        // Load relasi data
-        $queue->load(['patient', 'poli', 'dokter']);
-
-        // Validasi data relasi
-        if (!$queue->patient || !$queue->poli || !$queue->dokter) {
-            Log::error('Data patient, poli, atau dokter tidak ditemukan ketika review tiket', [
-                'queue_id' => $queue->id
-            ]);
-            return redirect()->back()->with('error', 'Data pasien, poli, atau dokter tidak ditemukan.');
-        }
-
-        // Tampilkan halaman review
-        return view('staff.queues.preview', compact('queue'));
-    }
-    public function printQueue(Queue $queue)
-    {
         try {
-            // Validasi status antrian
-            if (!in_array($queue->status, ['waiting', 'done'])) {
-                Log::warning('Gagal mencoba cetak tiket. Status antrian bukan waiting atau done', [
-                    'queue_id' => $queue->id,
-                    'status' => $queue->status
-                ]);
-                return redirect()->back()->with('error', 'Tiket antrian hanya dapat dicetak jika status masih menunggu atau sudah selesai.');
+            DB::beginTransaction();
+
+            // Kurangi current_count di poli_quotas
+            $poliQuota = PoliQuota::where('poli_id', $queue->poli_id)
+                ->where('quota_date', $queue->checkup_date->format('Y-m-d'))
+                ->first();
+
+            if ($poliQuota && $poliQuota->current_count > 0) {
+                $poliQuota->decrement('current_count');
             }
 
-            // Load relasi data
-            $queue->load(['patient', 'poli', 'dokter']);
+            $queue->delete();
 
-            // Validasi data relasi
-            if (!$queue->patient || !$queue->poli || !$queue->dokter) {
-                Log::error('Data patient, poli, atau dokter tidak ditemukan ketika cetak tiket', [
-                    'queue_id' => $queue->id
-                ]);
-                return redirect()->back()->with('error', 'Data pasien, poli, atau dokter tidak ditemukan.');
-            }
+            DB::commit();
 
-            // Generate PDF
-            $pdf = $this->generatePdf($queue);
-
-            // Log sukses
-            Log::info('Tiket antrian berhasil dicetak', [
-                'queue_id' => $queue->id,
-                'queue_number' => $queue->queue_number
-            ]);
-
-            // Simpan pesan sukses ke session
-            session()->flash('success', 'Tiket antrian berhasil dicetak.');
-
-            // Download PDF dengan nama file yang sesuai
-            return response()->streamDownload(function () use ($pdf) {
-                echo $pdf->output();
-            }, 'tiket_antrian_' . $queue->queue_number . '.pdf', [
-                'Content-Type' => 'application/pdf',
-            ]);
+            return redirect()->route('staff.queues.index')
+                ->with('success', 'Antrian berhasil dihapus');
 
         } catch (\Exception $e) {
-            Log::error('Gagal mencetak tiket', [
-                'queue_id' => $queue->id,
-                'error' => $e->getMessage()
-            ]);
-            return redirect()->back()->with('error', 'Terjadi kesalahan saat mencetak tiket: ' . $e->getMessage());
+            DB::rollback();
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
 
-    private function generatePdf(Queue $queue)
-    {
-        try {
-            $ticket_number = $queue->queue_number;
-            $currentDateTime = Carbon::now();
-
-            // Generate PDF
-            $pdf = Pdf::loadView('staff.queues.print', compact('queue', 'ticket_number', 'currentDateTime'));
-            $pdf->setPaper([0, 0, 566.92913, 566.92913], 'portrait');
-
-            return $pdf;
-
-        } catch (\Exception $e) {
-            Log::error('Gagal mencetak tiket antrian', [
-                'queue_id' => $queue->id,
-                'error' => $e->getMessage()
-            ]);
-            throw new \Exception('Gagal membuat tiket PDF: ' . $e->getMessage());
-        }
-    }
     public function call(Queue $queue)
     {
-        // Perbarui status antrian menjadi "called"
-        $queue->update([
-            'status' => 'called',
-            'called_time' => now()->format('H:i:s'), // Simpan waktu pemanggilan dalam format H:i:s
-        ]);
+        try {
+            DB::beginTransaction();
 
-        // Simpan riwayat pemanggilan
-        CallHistory::create([
-            'queue_id' => $queue->id,
-            'called_time' => now()->format('H:i:s'), // Simpan waktu pemanggilan dalam format H:i:s
-            'status' => 'called',
-        ]);
+            $queue->update([
+                'status' => 'called',
+                'called_time' => Carbon::now()->format('H:i:s')
+            ]);
 
-        Session::flash('success', 'Antrian berhasil dipanggil.');
-        return redirect()->route('staff.dashboard');
+            // Simpan riwayat panggilan
+            CallHistory::create([
+                'queue_id' => $queue->id,
+                'called_time' => Carbon::now(),
+                'status' => 'called'
+            ]);
+
+            DB::commit();
+
+            return back()->with('success', "Pasien {$queue->patient->nama} berhasil dipanggil");
+
+        } catch (\Exception $e) {
+            DB::rollback();
+            return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
     }
+
     public function complete(Queue $queue)
     {
-        // Perbarui status antrian menjadi "completed"
         $queue->update(['status' => 'completed']);
 
-        // Simpan riwayat pemanggilan dengan status "completed"
-        CallHistory::create([
-            'queue_id' => $queue->id,
-            'called_time' => now()->format('H:i:s'), // Simpan waktu pemanggilan dalam format H:i:s
-            'status' => 'completed',
-        ]);
-
-        Session::flash('success', 'Antrian berhasil diselesaikan.');
-        return redirect()->route('staff.dashboard');
+        return back()->with('success', "Antrian {$queue->queue_number} telah selesai");
     }
 
     public function skip(Queue $queue)
     {
-        // Perbarui status antrian menjadi "skipped"
         $queue->update(['status' => 'skipped']);
 
-        // Simpan riwayat pemanggilan dengan status "skipped"
-        CallHistory::create([
-            'queue_id' => $queue->id,
-            'called_time' => now()->format('H:i:s'), // Simpan waktu pemanggilan dalam format H:i:s
-            'status' => 'skipped',
-        ]);
-
-        Session::flash('success', 'Antrian berhasil dilewati.');
-        return redirect()->route('staff.dashboard');
+        return back()->with('success', "Antrian {$queue->queue_number} telah dilewati");
     }
-    public function dashboard()
+
+    public function printQueue(Queue $queue)
     {
-        // Ambil semua antrian hari ini
+        $queue->load(['patient', 'poli', 'dokter']);
+
+        return view('staff.queues.print', compact('queue'));
+    }
+
+    public function review(Queue $queue)
+    {
+        $queue->load(['patient', 'poli', 'dokter', 'callHistories']);
+
+        return view('staff.queues.review', compact('queue'));
+    }
+
+    public function history()
+    {
         $queues = Queue::with(['patient', 'poli', 'dokter'])
-            ->whereDate('created_at', today())
-            ->orderBy('created_at', 'asc')
-            ->get();
+            ->whereDate('checkup_date', '<', Carbon::today())
+            ->orderBy('checkup_date', 'desc')
+            ->orderBy('queue_number')
+            ->paginate(20);
 
-        return view('staff.queues.dashboard', compact('queues'));
+        return view('staff.queues.history', compact('queues'));
     }
 
-    public function current()
+    /**
+     * Get available poli quotas for AJAX
+     */
+    public function getPoliQuota(Request $request)
     {
-        // Ambil antrian saat ini (status 'waiting')
-        $currentQueue = Queue::with(['patient', 'poli', 'dokter'])
-            ->where('status', 'waiting')
-            ->whereDate('created_at', today())
-            ->orderBy('created_at', 'asc')
+        $poliId = $request->poli_id;
+        $date = $request->date ?? Carbon::today()->format('Y-m-d');
+
+        $poliQuota = PoliQuota::where('poli_id', $poliId)
+            ->where('quota_date', $date)
             ->first();
 
-        return view('staff.queues.current', compact('currentQueue'));
+        $poli = Poli::find($poliId);
+
+        if (!$poliQuota) {
+            $maxQuota = $poli->kapasitas_harian ?? 20;
+            $available = $maxQuota;
+            $used = 0;
+        } else {
+            $maxQuota = $poliQuota->max_quota;
+            $available = $maxQuota - $poliQuota->current_count;
+            $used = $poliQuota->current_count;
+        }
+
+        return response()->json([
+            'available' => $available,
+            'used' => $used,
+            'max_quota' => $maxQuota,
+            'is_full' => $available <= 0,
+            'poli_name' => $poli->nama
+        ]);
     }
 
-
-    public function waiting()
+    /**
+     * Cek dan update kuota poli
+     */
+    private function checkAndUpdatePoliQuota($poliId, $checkupDate)
     {
-        // Ambil semua antrian dengan status waiting
-        $waitingQueues = Queue::with(['patient', 'poli', 'dokter'])
-            ->where('status', 'waiting')
-            ->whereDate('created_at', today())
-            ->orderBy('created_at', 'asc')
-            ->get();
+        $poli = Poli::find($poliId);
+        $dateString = $checkupDate->format('Y-m-d');
 
-        return view('staff.queues.waiting', compact('waitingQueues'));
+        // Cari atau buat record poli_quotas
+        $poliQuota = PoliQuota::firstOrCreate(
+            [
+                'poli_id' => $poliId,
+                'quota_date' => $dateString
+            ],
+            [
+                'max_quota' => $poli->kapasitas_harian ?? 20,
+                'current_count' => 0
+            ]
+        );
+
+        // Cek apakah kuota masih tersedia
+        if ($poliQuota->current_count >= $poliQuota->max_quota) {
+            return null; // Kuota penuh
+        }
+
+        return $poliQuota;
+    }
+
+    /**
+     * Generate nomor antrian
+     */
+    private function generateQueueNumber($poliId, $checkupDate)
+    {
+        $poli = Poli::find($poliId);
+        $dateString = $checkupDate->format('ymd'); // Format: YYMMDD
+
+        $lastQueue = Queue::where('poli_id', $poliId)
+            ->whereDate('checkup_date', $checkupDate)
+            ->orderBy('queue_number', 'desc')
+            ->first();
+
+        if ($lastQueue) {
+            // Extract nomor urut dari queue_number terakhir
+            $lastNumber = intval(substr($lastQueue->queue_number, -3));
+            $newNumber = $lastNumber + 1;
+        } else {
+            $newNumber = 1;
+        }
+
+        return $poli->kode_poli . $dateString . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+    }
+
+    /**
+     * Hitung estimasi waktu tunggu
+     */
+    private function calculateEstimatedWaitingTime($poliId, $checkupDate)
+    {
+        $waitingQueues = Queue::where('poli_id', $poliId)
+            ->whereDate('checkup_date', $checkupDate)
+            ->whereIn('status', ['waiting', 'called'])
+            ->count();
+
+        // Asumsi: setiap pasien membutuhkan 15 menit
+        return $waitingQueues * 15;
     }
 }

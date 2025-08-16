@@ -29,4 +29,9 @@ class Poli extends Model
      {
          return $this->belongsTo(Dokter::class);
      }
+    public function kouta()
+    {
+        return $this->hasMany(PoliQuota::class);
+    }
+
 }
