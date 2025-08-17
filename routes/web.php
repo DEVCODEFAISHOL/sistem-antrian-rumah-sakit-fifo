@@ -81,8 +81,8 @@ Route::middleware('auth')->group(function () {
         Route::get('/dashboard', [StaffDashboardController::class, 'index'])->name('dashboard');
 
         // Kelola antrian
-         // Route ini khusus untuk menangani request AJAX pengecekan kuota poli
-      Route::get('/queues/get-poli-quota', [StaffQueueController::class, 'getPoliQuota'])->name('queues.get-poli-quota');
+        // Route ini khusus untuk menangani request AJAX pengecekan kuota poli
+        Route::get('/queues/get-poli-quota', [StaffQueueController::class, 'getPoliQuota'])->name('queues.get-poli-quota');
 
         Route::resource('queues', StaffQueueController::class);
         Route::post('/queues/{queue}/call', [StaffQueueController::class, 'call'])->name('queues.call');
@@ -92,11 +92,15 @@ Route::middleware('auth')->group(function () {
 
         Route::get('/queues/history', [StaffQueueController::class, 'history'])->name('queues.history');
         Route::get('/queues/{queue}/print', [StaffQueueController::class, 'printQueue'])->name('queues.print');
+        //    / Route untuk queue preview
         Route::get('/queues/{queue}/preview', [StaffQueueController::class, 'review'])->name('queues.preview');
 
-        // Kelola pasien
+        // Kelola pasien - PENTING: Route khusus harus SEBELUM resource route
+        Route::get('/patients/search', [StaffPatientController::class, 'search'])->name('patients.search');
+        Route::get('/patients/{patient}/history', [StaffPatientController::class, 'history'])->name('patients.history');
+
+        // Resource route untuk patients (ini harus setelah route khusus)
         Route::resource('patients', StaffPatientController::class);
-       Route::get('/patients/history', [StaffPatientController::class, 'history'])->name('patients.history');
     });
 });
 

@@ -103,13 +103,29 @@ class PatientController extends Controller
         return view('staff.patients.index', compact('patients'));
     }
 
-    public function history(Patient $patient) // Requires a Patient object
+    public function history(Patient $patient)
     {
+        // Ambil semua queue/antrian untuk pasien ini dengan relasi
         $queues = Queue::with(['patient', 'poli', 'dokter'])
-            ->where('patient_id', $patient->id) // Filter by patient ID
+            ->where('patient_id', $patient->id)
             ->orderBy('created_at', 'desc')
             ->get();
 
-        return view('staff.patients.history', compact('queues', 'patient')); // Pass both queues and patient
+        // Return view dengan data queues dan patient
+        return view('staff.patients.history', compact('queues', 'patient'));
     }
+
+    // Jika Anda ingin menambahkan method untuk statistik riwayat
+    public function historyStats(Patient $patient)
+    {
+        $stats = [
+            'total_kunjungan' => Queue::where('patient_id', $patient->id)->count(),
+            'kunjungan_selesai' => Queue::where('patient_id', $patient->id)->where('status', 'selesai')->count(),
+            'kunjungan_menunggu' => Queue::where('patient_id', $patient->id)->where('status', 'menunggu')->count(),
+            'kunjungan_batal' => Queue::where('patient_id', $patient->id)->where('status', 'dibatalkan')->count(),
+        ];
+
+        return response()->json($stats);
+    }
+
 }
