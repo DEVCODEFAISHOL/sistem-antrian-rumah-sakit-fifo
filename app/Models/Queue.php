@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
 
 class Queue extends Model
 {
@@ -59,19 +60,21 @@ class Queue extends Model
     }
 
     // Method untuk generate nomor antrian
-    public static function generateQueueNumber($poli_id)
-    {
-        $poli = Poli::find($poli_id);
-        $prefix = strtoupper(substr($poli->nama, 0, 1));
-        $lastQueue = self::where('poli_id', $poli_id)->orderBy('id', 'desc')->first();
-        $number = $lastQueue ? (int) substr($lastQueue->queue_number, 1) + 1 : 1;
-        $queueNumber = $prefix . str_pad($number, 3, '0', STR_PAD_LEFT);
+  // Di App\Models\Queue.php
+public static function generateQueueNumber($poliId)
+{
+    $today = Carbon::today()->format('Ymd');
+    $poli = Poli::find($poliId);
+    $poliCode = $poli ? substr(strtoupper($poli->name), 0, 3) : 'XXX';
 
-        while (self::where('queue_number', $queueNumber)->exists()) {
-            $number++;
-            $queueNumber = $prefix . str_pad($number, 3, '0', STR_PAD_LEFT);
-        }
+    $lastQueue = self::whereDate('created_at', Carbon::today())
+        ->where('poli_id', $poliId)
+        ->orderBy('id', 'desc')
+        ->first();
 
-        return $queueNumber;
-    }
+    $number = $lastQueue ? (int)substr($lastQueue->queue_number, -3) + 1 : 1;
+
+    return $poliCode . '-' . $today . '-' . str_pad($number, 3, '0', STR_PAD_LEFT);
+}
+
 }
