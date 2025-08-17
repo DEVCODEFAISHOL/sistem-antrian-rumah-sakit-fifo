@@ -1,149 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tiket Antrian</title>
-    <link href="{{ asset('css/app.css') }}" rel="stylesheet">
+    <title>Tiket Antrian - {{ $queue->queue_number }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        @page {
+            size: 80mm 110mm;
+            margin: 0;
+        }
         body {
-            font-family: 'Roboto', sans-serif;
-            color: #334756;
+            font-family: system-ui, -apple-system, sans-serif;
+            width: 80mm;
+            height: 110mm;
             margin: 0;
             padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: #f8fafc;
         }
-
         .ticket-container {
-            width: 80%;
-            max-width: 600px;
-            background: white;
-            border-radius: 0.75rem;
-            padding: 2rem;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-            display: flex;
-            flex-direction: column;
-        }
-
-        .header {
-            text-align: center;
-            margin-bottom: 1.5rem;
-        }
-
-        .header h1 {
-            font-size: 2.25rem;
-            font-weight: 700;
-            color: #1e3a8a;
-            letter-spacing: 0.05rem;
-            margin-bottom: 0.5rem;
-        }
-
-
-        .ticket-number-container {
-            display: flex;
-            justify-content: center; /* Center the content horizontally */
-             margin-bottom: 1.5rem;
-        }
-
-        .ticket-number {
-             font-size: 3rem; /* Larger size */
-            text-align: center; /* Center align text */
-            font-weight: 600;
-            color: #214179;
-             white-space: nowrap; /* Prevent text from wrapping */
-        }
-
-        .info-box {
             width: 100%;
-            border: 1px solid #e2e8f0;
-            border-radius: 0.5rem;
-            padding: 1.25rem;
-            margin: 1rem auto;
-        }
-
-        .info-box p {
-            margin-bottom: 0.75rem;
-            font-size: 1rem;
-        }
-
-        .info-box span {
-            font-weight: 500;
-            color: #4a5568;
-        }
-
-        footer {
-            text-align: center;
-            padding-top: 2rem;
-            color: #6b7280;
-        }
-
-        footer p {
-            margin: 0.25rem 0;
-            font-size: 0.875rem;
-            line-height: 1.4;
-        }
-
-        footer .date-printed {
-            margin-top: 1rem;
-            font-size: 0.75rem;
-            color: #9ca3af;
-        }
-
-
-        @media print {
-            body {
-                background: white;
-                display: block;
-                min-height: auto;
-                margin: 0;
-                padding: 0;
-            }
-
-            .ticket-container {
-                width: 100%;
-                max-width: none;
-                box-shadow: none;
-                margin: 0;
-                border-radius: 0;
-                padding: 20px;
-            }
+            height: 100%;
+            padding: 8px;
+            box-sizing: border-box;
         }
     </style>
 </head>
 
-<body class="print:bg-white">
-    <div class="ticket-container">
+<body class="bg-white">
+    <div class="ticket-container flex flex-col">
         <!-- Header -->
-        <div class="header">
-            <h1>TIKET ANTRIAN</h1>
+        <div class="text-center mb-2">
+            <h1 class="text-lg font-bold text-blue-900">RUMAH SAKIT BUDHI ASIH</h1>
         </div>
 
-        <!-- Nomor Antrian Tanpa Kotak -->
-         <div class="ticket-number-container">
-            <p class="ticket-number">{{ $ticket_number }}</p>
+        <!-- Nomor Antrian -->
+        <div class="flex justify-center mb-3">
+            <div class="text-4xl font-bold text-blue-800 border-2 border-blue-800 rounded px-6 py-1 bg-blue-50">
+                {{ $queue->queue_number }}
+            </div>
         </div>
 
-        <!-- Informasi Antrian -->
-        <div class="info-box">
-            <p><span>Nama Pemesan:</span> {{ $queue->patient->nama ?? '-' }}</p>
-            <p><span>Poli:</span> {{ $queue->poli->nama ?? '-' }}</p>
-            <p><span>Jenis Tiket:</span> {{ $queue->priority }}</p>
+        <!-- Informasi Pasien -->
+        <div class="grid grid-cols-2 gap-x-2 gap-y-1 text-sm mb-3">
+            <span class="text-gray-600 font-medium">Nama:</span>
+            <span class="text-gray-900 font-semibold">{{ $queue->patient->nama ?? '-' }}</span>
+
+            <span class="text-gray-600 font-medium">Poli:</span>
+            <span class="text-gray-900 font-semibold">{{ $queue->poli->nama ?? '-' }}</span>
+
+            <span class="text-gray-600 font-medium">Prioritas:</span>
+            <span>
+                @if($queue->priority == 'ringan')
+                    <span class="bg-green-100 text-green-800 text-xs font-semibold px-2 py-0.5 rounded-full">Ringan</span>
+                @elseif($queue->priority == 'sedang')
+                    <span class="bg-yellow-100 text-yellow-800 text-xs font-semibold px-2 py-0.5 rounded-full">Sedang</span>
+                @elseif($queue->priority == 'berat')
+                    <span class="bg-red-100 text-red-800 text-xs font-semibold px-2 py-0.5 rounded-full">Berat</span>
+                @else
+                    <span class="bg-gray-100 text-gray-800 text-xs font-semibold px-2 py-0.5 rounded-full">{{ ucfirst($queue->priority) }}</span>
+                @endif
+            </span>
         </div>
 
+        <!-- Divider -->
+        <div class="border-t border-dashed border-gray-300 my-1"></div>
 
         <!-- Footer -->
-        <footer>
-            <p>Selamat datang di Rumah Sakit Budhi Asih.</p>
-            <p>Semoga lekas sembuh, jaga kesehatan ibu dan bapak sekalian.</p>
-            <p>Salam hangat dari kami.</p>
-            <p class="date-printed">Dicetak pada: {{ $currentDateTime->format('d M Y H:i:s') }}</p>
-        </footer>
+        <div class="text-center text-xs text-gray-600 mt-1">
+            <p>Terima kasih atas kunjungan Anda</p>
+            <p>Mohon tunggu sampai nomor antrian dipanggil</p>
+            <p class="mt-1 text-gray-500 text-xs">Dicetak: {{ now()->format('d/m/Y H:i') }}</p>
+        </div>
     </div>
-</body>
 
+    <script>
+        window.onload = function() {
+            setTimeout(function() {
+                window.print();
+            }, 300);
+        }
+    </script>
+</body>
 </html>
