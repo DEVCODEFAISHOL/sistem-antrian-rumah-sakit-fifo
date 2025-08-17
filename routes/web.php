@@ -97,7 +97,8 @@ Route::middleware('auth')->group(function () {
 
         // Kelola pasien - PENTING: Route khusus harus SEBELUM resource route
         Route::get('/patients/search', [StaffPatientController::class, 'search'])->name('patients.search');
-        Route::get('/patients/{patient}/history', [StaffPatientController::class, 'history'])->name('patients.history');
+       Route::get('/patients/{patient}/history', [StaffPatientController::class, 'history'])
+    ->name('patients.history');
 
         // Resource route untuk patients (ini harus setelah route khusus)
         Route::resource('patients', StaffPatientController::class);

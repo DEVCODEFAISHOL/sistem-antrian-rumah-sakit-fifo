@@ -19,6 +19,10 @@ class Patient extends Model
         'no_telepon',
         'medical_history',
     ];
+// Di model Patient
+protected $casts = [
+    'tanggal_lahir' => 'datetime',
+];
 
     // Relasi dengan antrian
     public function queues()

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\CallHistory;
+use App\Models\Poli; // Tambahkan ini
 use App\Models\Queue;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -16,52 +17,58 @@ class DashboardController extends Controller
         // Ambil tanggal hari ini
         $today = Carbon::today();
 
-        // Hitung total antrian hari ini
-        $totalQueuesToday = Queue::whereDate('created_at', $today)->count();
+        // Ambil kuota harian dari poli (contoh: Penyakit Dalam dengan kode 'PE')
+        // Pastikan Anda memiliki model Poli dengan kolom 'kode_poli' dan 'kapasitas_harian'
+        $poli = Poli::where('kode_poli', 'PE')->first();
+        $dailyQuota = $poli ? $poli->kapasitas_harian : 20; // Fallback kuota 20 jika tidak ditemukan
+
+        // Hitung total antrian hari ini berdasarkan tanggal periksa (checkup_date)
+        $totalQueuesToday = Queue::whereDate('checkup_date', $today)->count();
+
+        // Hitung sisa kuota
+        $remainingQuota = $dailyQuota - $totalQueuesToday;
 
         // Hitung total antrian yang sudah dipanggil hari ini
-        $totalCalledQueues = Queue::whereDate('created_at', $today)
-            ->where('status', 'called')
+        $totalCalledQueues = Queue::whereDate('checkup_date', $today)
+            ->whereIn('status', ['called', 'completed', 'skipped']) // Status yang dianggap sudah lewat
             ->count();
 
         // Ambil antrian terakhir yang dipanggil hari ini
-        $lastQueue = Queue::whereDate('created_at', $today)
+        $lastQueue = Queue::whereDate('checkup_date', $today)
             ->where('status', 'called')
             ->orderBy('called_time', 'desc')
             ->first();
 
-        // Ambil antrian selanjutnya (antrian pertama yang masih waiting) hari ini
-        $nextQueue = Queue::whereDate('created_at', $today)
+        // Ambil antrian selanjutnya (antrian pertama yang masih waiting) hari ini, urutkan berdasarkan nomor antrian
+        $nextQueue = Queue::whereDate('checkup_date', $today)
             ->where('status', 'waiting')
-            ->orderBy('created_at', 'asc')
+            ->orderBy('queue_number', 'asc')
             ->first();
 
         // Ambil antrian saat ini (seluruh prioritas) hari ini
-        $currentQueue = Queue::whereDate('created_at', $today)
-            ->where('status', 'waiting')
-            ->orderBy('created_at', 'asc')
-            ->first();
+        // Variabel ini memiliki logika yang sama dengan $nextQueue, Anda bisa menggunakan salah satunya
+        $currentQueue = $nextQueue;
 
 
         // Ambil antrian saat ini (ringan - sedang) hari ini
-        $currentQueueLightMedium = Queue::whereDate('created_at', $today)
+        $currentQueueLightMedium = Queue::whereDate('checkup_date', $today)
             ->where('status', 'waiting')
             ->whereIn('priority', ['ringan', 'sedang'])
-            ->orderBy('created_at', 'asc')
+            ->orderBy('queue_number', 'asc')
             ->first();
 
         // Ambil antrian saat ini (berat) hari ini
-        $currentQueueHeavy = Queue::whereDate('created_at', $today)
+        $currentQueueHeavy = Queue::whereDate('checkup_date', $today)
             ->where('status', 'waiting')
             ->where('priority', 'berat')
-            ->orderBy('created_at', 'asc')
+            ->orderBy('queue_number', 'asc')
             ->first();
 
 
-        // Ambil daftar antrian hari ini untuk ditampilkan di tabel
+        // Ambil daftar antrian hari ini untuk ditampilkan di tabel, urutkan berdasarkan nomor antrian
         $queues = Queue::with('patient')
-            ->whereDate('created_at', $today)
-            ->orderBy('created_at', 'asc')
+            ->whereDate('checkup_date', $today)
+            ->orderBy('queue_number', 'asc')
             ->get();
 
         return view('admin.dashboard', compact(
@@ -73,6 +80,8 @@ class DashboardController extends Controller
             'currentQueueLightMedium',
             'currentQueueHeavy',
             'queues',
+            'dailyQuota',      // Kirim data kuota harian ke view
+            'remainingQuota'   // Kirim data sisa kuota ke view
         ));
     }
 
@@ -139,7 +148,8 @@ class DashboardController extends Controller
 
     public function visitsReport()
     {
-        $visitsByDate = Queue::select(DB::raw('DATE(created_at) as visit_date'), DB::raw('count(*) as total_visits'))
+        // Saran: Ubah juga 'created_at' menjadi 'checkup_date' jika laporan ingin sesuai tanggal periksa
+        $visitsByDate = Queue::select(DB::raw('DATE(checkup_date) as visit_date'), DB::raw('count(*) as total_visits'))
             ->groupBy('visit_date')
             ->orderBy('visit_date', 'asc')
             ->get();
@@ -149,8 +159,9 @@ class DashboardController extends Controller
 
     public function waitingTimeReport()
     {
+        // Saran: Ubah juga 'created_at' menjadi 'checkup_date' jika laporan ingin sesuai tanggal periksa
         $queues = Queue::whereNotNull('called_time')->whereNotNull('appointment_time')
-            ->whereDate('created_at', today())
+            ->whereDate('checkup_date', today())
             ->get()
             ->map(function ($queue) {
                 $appointment = Carbon::parse($queue->appointment_time);
